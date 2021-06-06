@@ -106,24 +106,28 @@ class CommandParser:
         tmp = os.popen('hostname').read()
         self.server = tmp.strip()
         self._cmd_styles = { 
-            'UbDefault':' \033[32;40;92m{d.user}@{d.server}\033[0m:\033[34;40;94m{d.curpath}\033[0m$ ',
-            'ArchDefault':' {d.user}@{d.server}->{d.curpath}$',
-            'RHELDefault':' [{d.user}@{d.servre} ~]#'
+            'UbDefault':'\033[32;40;92m{d.user}@{d.server}\033[0m:\033[34;40;94m{d.curpath}\033[0m$ ',
+            'ArchDefault':'\033[32;41;91m{d.user}@{d.server}\033[0m->\033[34;40;94m{d.curpath}\033[0m#',
+            'RHELDefault':' [{d.user}@{d.servre} {d.curpath} ~]#'
         }
-        if terminal_style not in self._cmd_styles:
-            os.system('echo "Invalid style was examined and the style was set to ubuntustyle"')
-            self._style = 'UbDefault'
-        else:
-            self._style = terminal_style
-        self._fmt = self._cmd_styles[self._style]
+        self._check_style_valid(terminal_style, auto_fix=True)
         #Cannot use the root/administor
-
+    
     '''    
     def __repr__(self):
 
         return self._fmt.format(d=self, self._style)
         #return format(self, 'UbDefault')
     '''        
+    def _check_style_valid(self, style, auto_fix=False):
+        if style not in self._cmd_styles.keys():
+            os.system('echo "Invalid style was examined and the style was set to previous style"')
+            if auto_fix:
+                self._style = 'UbDefault'
+        else:
+            self._style = style
+        self._fmt = self._cmd_styles[self._style]
+
 
     def __format__(self, format_style):
         if format_style not in self._cmd_styles:
@@ -134,7 +138,8 @@ class CommandParser:
 
 
     def set_style(self, spec_style):
-        self._style = spec_style
+        self._check_style_valid(spec_style, auto_fix=False)
+
 
     def new_styles(self, action='Not add', **kwargs):
         """
@@ -155,11 +160,12 @@ class CommandParser:
             pass
 
 
-    def terminal(self, style):
+    def terminal(self):
         """
         Just using os.system() to do a simple terminal... 
         """
-        cmd = input(format(self, self._cmd_styles[style]))
+
+        cmd = input(format(self, self._cmd_styles[self._style]))
         #cmd = input("Commans:")
         shutlist = ['POWEROFF', 'SHUTDOWN', 'EXIT', ]
         while cmd:
@@ -167,16 +173,21 @@ class CommandParser:
                 break
             else:
                 os.system(cmd)
-            cmd = input(format(self, self._cmd_styles[style]))
+            cmd = input(format(self, self._cmd_styles[self._style]))
             #cmd = input("Enter Commands")
-
-    """def printit(self):
-        print(self._fmt)
-        print(format(self, self._style))
-"""
+    def change_os():
+        #TODO Difficult!!! change wsl terminal<->powershell in this program
+        """
+        os.system里面的访问效率低，以后尝试一下能不能直接用远程连接的方式
+        """
+        pass
 
 demo = CommandParser('UbDefault')
-demo.terminal('RHELDefault')
+demo.terminal()
 print(demo)
 print(format(demo))
 print(demo.curpath, demo.user, demo.server, sep='\n\n')
+demo.set_style('ArchDefault')
+demo.terminal()
+demo.set_style('REHLDefault')
+demo.terminal()
