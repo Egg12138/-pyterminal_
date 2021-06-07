@@ -9,14 +9,15 @@ Mail:xiaojzh7@mail2.sysu.edu.cn and ______
 import argparse #Terminal Args Parser
 import click    #Terminal Args Parser
 import getpass  
-import matplotlib.pyplot as plt
-import numpy as np 
 import os
 import os.path as op
 import pysnooper #A specaial function Debugger
 
+import warnings
+#Moduel built by myself
+import datakits.testWaveKits
 #TODO make this file a module!
-
+#__all__ = []
 '''
 #==========
 Field of Argparser
@@ -27,11 +28,14 @@ Field of Argparser
 '''
 
 #parser = argparse.Add_argpaer(description='Fuck this', usage='do something')
+
 '''
 #==========
 Field of Global vars
 #==========
 '''
+#warnings.simplefilter('always')
+
 def startwith(obj:str, tobecmp:list):
     """
     Return True if obj starts with any one in to be compare list,
@@ -85,7 +89,7 @@ class DataKit:
 
 
 
-class RegexMatcher:
+class RegexMatcher:#It will be moved to the grepy module..
     pass
 
 class CommandParser:
@@ -98,7 +102,8 @@ class CommandParser:
             action = 'Add'
             You can initializa the Command Parser instance
             with a DIY terminal tip style
-            Or you can use CommandParser.add_style to add more style and use them 
+            Or you can use CommandParser.add_style to add more style and use them
+            To ensure many platform can use this emulating temrinal freely, I will modify this class in two weeks.
         """
 
         self.user = getpass.getuser()
@@ -110,7 +115,11 @@ class CommandParser:
             'ArchDefault':'\033[32;41;91m{d.user}@{d.server}\033[0m->\033[34;40;94m{d.curpath}\033[0m#',
             'RHELDefault':' [{d.user}@{d.servre} {d.curpath} ~]#'
         }
-        self._check_style_valid(terminal_style, auto_fix=True)
+        self._Messages = {
+    'WarningStyle':'Invalid style has been examined. ',
+    'WarningStyleReset':'The current style was set to the default UbDefault Style',
+}
+        self._io_style_valid(terminal_style, auto_fix=True)
         #Cannot use the root/administor
     
     '''    
@@ -119,15 +128,25 @@ class CommandParser:
         return self._fmt.format(d=self, self._style)
         #return format(self, 'UbDefault')
     '''        
-    def _check_style_valid(self, style, auto_fix=False):
+    def _io_style_valid(self, style, auto_fix=False):
         if style not in self._cmd_styles.keys():
-            os.system('echo "Invalid style was examined and the style was set to previous style"')
+            #os.system('echo "Invalid style was examined and the style was set to previous style"')
+            
             if auto_fix:
+                warnings.warn(self._Messages['WarningStyleReset'])
                 self._style = 'UbDefault'
+            else:
+                warnings.warn(self._Messages['WarningStyle'])
         else:
             self._style = style
         self._fmt = self._cmd_styles[self._style]
-
+    def _load_style_check(self, styles:str):
+        """Check the styles. If it is invalid, print messages, and return False"""
+        res = 0
+        if res:
+            warnings.warn(self._Messages['WarningStyle'])
+            return False
+            pass
 
     def __format__(self, format_style):
         if format_style not in self._cmd_styles:
@@ -138,7 +157,7 @@ class CommandParser:
 
 
     def set_style(self, spec_style):
-        self._check_style_valid(spec_style, auto_fix=False)
+        self._io_style_valid(spec_style, auto_fix=False)
 
 
     def new_styles(self, action='Not add', **kwargs):
@@ -152,12 +171,21 @@ class CommandParser:
                     print(f"An existing style:{key} has been changed")
                 self._cmd_styles[key] = kwargs[key]
 
-    def add_styles(self, action='Not load', **kwargs):
+    '''Lock it temporatly..
+    def add_styles(self, action='Not load', file):
         """
         add style from a json file
         """
         if action.upper() in ['ADD', 'DIT', 'APPEND']:
-            pass
+            #Read the file Using For loop!
+            for i in range(5):#Take this for example..
+                print(i)
+                if self._load_style_check():
+                    pass
+            
+        pass
+    '''
+        
 
 
     def terminal(self):
@@ -175,6 +203,8 @@ class CommandParser:
                 os.system(cmd)
             cmd = input(format(self, self._cmd_styles[self._style]))
             #cmd = input("Enter Commands")
+
+
     def change_os():
         #TODO Difficult!!! change wsl terminal<->powershell in this program
         """
@@ -182,12 +212,14 @@ class CommandParser:
         """
         pass
 
-demo = CommandParser('UbDefault')
-demo.terminal()
-print(demo)
-print(format(demo))
-print(demo.curpath, demo.user, demo.server, sep='\n\n')
-demo.set_style('ArchDefault')
-demo.terminal()
-demo.set_style('REHLDefault')
-demo.terminal()
+if __name__ == '__main__':
+    """Doing Some Tests...."""
+    demo = CommandParser('UbDefault')
+    demo.terminal()
+    print(demo)
+    print(format(demo))
+    print(demo.curpath, demo.user, demo.server, sep='\n\n')
+    demo.set_style('ArchDefault')
+    demo.terminal()
+    demo.set_style('REHLDefault')
+    demo.terminal()
